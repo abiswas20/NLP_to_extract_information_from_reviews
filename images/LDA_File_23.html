@@ -1,0 +1,41 @@
+
+<link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/bmabey/pyLDAvis/files/ldavis.v1.0.0.css">
+
+
+<div id="ldavis_el2451404209539032966608193631"></div>
+<script type="text/javascript">
+
+var ldavis_el2451404209539032966608193631_data = {"mdsDat": {"x": [0.09408918322828301, -0.047044585542541366, -0.04704459768574165], "y": [6.445164200832997e-09, -0.07490862095695475, 0.07490861451179058], "topics": [1, 2, 3], "cluster": [1, 1, 1], "Freq": [36.60939570539513, 31.695302151350717, 31.695302143254146]}, "tinfo": {"Term": ["characters", "story", "end", "read", "enjoyed", "ending", "story", "great", "kept", "characters", "end", "good"], "Freq": [1.0, 1.0, 1.0, 0.6635612011834611, 0.6635611895273741, 0.6635611750607635, 0.6642373881473115, 0.6642373833199743, 0.6642373824997504, 0.6642374012302805, 0.6642373894023943, 0.6642373744794541], "Total": [1.0, 1.0, 1.0, 0.9999987338703574, 0.9999987338704068, 0.9999987338704684, 1.000000841338728, 1.00000084133872, 1.0000008413387187, 1.0000008468340411, 1.0000008468340194, 1.0000008468340038], "Category": ["Default", "Default", "Default", "Topic1", "Topic1", "Topic1", "Topic2", "Topic2", "Topic2", "Topic3", "Topic3", "Topic3"], "logprob": [3.0, 2.0, 1.0, -1.7079, -1.7079, -1.7079, -1.5627, -1.5627, -1.5627, -1.5627, -1.5627, -1.5627], "loglift": [3.0, 2.0, 1.0, 0.5947, 0.5947, 0.5947, 0.7399, 0.7399, 0.7399, 0.7399, 0.7399, 0.7399]}, "token.table": {"Topic": [3, 3, 1, 1, 3, 2, 2, 1, 2], "Freq": [0.999999153166676, 0.9999991531666977, 1.0000012661311346, 1.0000012661311963, 0.9999991531667133, 0.9999991586619879, 0.9999991586619892, 1.0000012661312456, 0.9999991586619799], "Term": ["characters", "end", "ending", "enjoyed", "good", "great", "kept", "read", "story"]}, "R": 3, "lambda.step": 0.01, "plot.opts": {"xlab": "PC1", "ylab": "PC2"}, "topic.order": [2, 1, 3]};
+
+function LDAvis_load_lib(url, callback){
+  var s = document.createElement('script');
+  s.src = url;
+  s.async = true;
+  s.onreadystatechange = s.onload = callback;
+  s.onerror = function(){console.warn("failed to load library " + url);};
+  document.getElementsByTagName("head")[0].appendChild(s);
+}
+
+if(typeof(LDAvis) !== "undefined"){
+   // already loaded: just create the visualization
+   !function(LDAvis){
+       new LDAvis("#" + "ldavis_el2451404209539032966608193631", ldavis_el2451404209539032966608193631_data);
+   }(LDAvis);
+}else if(typeof define === "function" && define.amd){
+   // require.js is available: use it to load d3/LDAvis
+   require.config({paths: {d3: "https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min"}});
+   require(["d3"], function(d3){
+      window.d3 = d3;
+      LDAvis_load_lib("https://cdn.rawgit.com/bmabey/pyLDAvis/files/ldavis.v1.0.0.js", function(){
+        new LDAvis("#" + "ldavis_el2451404209539032966608193631", ldavis_el2451404209539032966608193631_data);
+      });
+    });
+}else{
+    // require.js not available: dynamically load d3 & LDAvis
+    LDAvis_load_lib("https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js", function(){
+         LDAvis_load_lib("https://cdn.rawgit.com/bmabey/pyLDAvis/files/ldavis.v1.0.0.js", function(){
+                 new LDAvis("#" + "ldavis_el2451404209539032966608193631", ldavis_el2451404209539032966608193631_data);
+            })
+         });
+}
+</script>
