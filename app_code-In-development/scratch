@@ -1,17 +1,3 @@
-#sentence embeddings
-model = SentenceTransformer('bert-large-nli-stsb-mean-tokens')
-embeddings = model.encode(data['reviewText'], show_progress_bar=True)
-
-#reduce dimensionality to 6, keeping neighbors at 100 
-umap_embeddings = umap.UMAP(n_neighbors=100,n_components=6,metric='cosine').fit_transform(embeddings)
-
-#clustering using HDBSCAN
-clusters=hdbscan.HDBSCAN(min_cluster_size=16,min_samples=10,cluster_selection_epsilon=0.5,metric='euclidean',cluster_selection_method='eom').fit(umap_embeddings)
-
-
-#Let's explore what clusters and the docs in each cluster
-labels=np.unique(clusters.labels_)
-labels
 
 #we can use the UMAP method we used previously to create embedding in 2d and visualize the findings.
 umap_embeddings_2D=umap.UMAP(n_neighbors=100,n_components=2,metric='cosine').fit_transform(embeddings)
