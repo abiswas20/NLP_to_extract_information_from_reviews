@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import umap
 import hdbscan as hdbscan
 from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction import text
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
 
 gc.set_threshold(3,3,3)
 
@@ -94,7 +97,7 @@ umap_embeddings_2D=umap.UMAP(n_neighbors=100,n_components=2,metric='cosine').fit
 df_umap_embeddings_2D=pd.DataFrame(umap_embeddings_2D,columns=['x','y'])
 df_umap_embeddings_2D['label']=clusters.labels_
 
-cluster_contributions=df_umap_embeddings_2D['label'].value_counts(normalize=True)  #contribution (in pct) of each cluster
+cluster_contributions=df_umap_embeddings_2D['label'].value_counts(normalize=True)  #contribution (in pct) of each cluster is the same
 
 labels_and_contributions=st.checkbox('Show cluster labels and relative contributions')
 if labels_and_contributions:
@@ -110,17 +113,28 @@ if show_2d_clusters:
     st.pyplot(fig,clear_figure=False)
 
 #Let's create a column with labels in the original dataframe
-data['label']=df_umap_embeddings_2D['label']
+data['label']=clusters.labels_       #changing from df_umap_embeddings_2D['label']
 
-selected_clusters=[i for i in range(len(df_umap_embeddings_2D['label'].value_counts(normalize=True))-2) if df_umap_embeddings_2D['label'].value_counts(normalize=True)[i]>0.02]
+selected_clusters=[i for i in range(-1,len(df_umap_embeddings_2D['label'].value_counts(normalize=True))-1) if df_umap_embeddings_2D['label'].value_counts(normalize=True)[i]>0.02]
 
-df_umap_embeddings_2D_selected_clusters=df_umap_embeddings_2D[df_umap_embeddings_2D['label'].isin(selected_clusters)]
-df_umap_embeddings_2D_selected_clusters.plot(x='x',y='y',kind='scatter',c='label',cmap='cividis',figsize=(16,12))
 
+#selected_clusters=[i for i in range(-1,len(data['label'])-2) if data['label'].value_counts(normalize=True)[i]>=0.02]
+
+print('cluster_contributions',cluster_contributions)
+print('selected_clusters',selected_clusters)
+
+gc.collect()
+
+show_2d_selected_clusters=st.checkbox('Show major clusters in 2D',key='2D_major_clusters')
+if show_2d_selected_clusters:
+    df_umap_embeddings_2D_selected_clusters=df_umap_embeddings_2D[df_umap_embeddings_2D['label'].isin(selected_clusters)]
+    df_umap_embeddings_2D_selected_clusters.plot(x='x',y='y',kind='scatter',c='label',cmap='cividis',figsize=(16,12))
+
+
+gc.collect()
 
 #We can go through the same exercise with 3D.
-
-show_3d_clusters=st.checkbox('Show clusters in a 3D plot')
+show_3d_clusters=st.checkbox('Show major clusters in 3D plot',key='3D_major_clusters')
 if show_3d_clusters:
     umap_embeddings_3D=umap.UMAP(n_neighbors=100,n_components=3,metric='cosine').fit_transform(embeddings)
     df_umap_embeddings_3D=pd.DataFrame(umap_embeddings_3D,columns=['x','y','z'])
@@ -138,3 +152,78 @@ if show_3d_clusters:
     ax.legend()
 
     st.pyplot(fig,clear_figure=False)
+
+gc.collect()
+
+#We can label the original dataframe and extract reviews corresponding to each label.
+data_selected_clusters=data[data['label'].isin(selected_clusters)].copy(deep=True)
+
+
+#create docs from data in each cluster, ready to be fit to TF-IDF vectorizer
+def create_doc(input_dataframe,clusters_to_select):
+  docs=[]
+  for label in clusters_to_select:
+    doc=input_dataframe[input_dataframe['label']==label]
+    docs.append(doc)
+  return docs
+
+docs=create_doc(data_selected_clusters,selected_clusters)
+
+############## Function Starts ################
+
+def docs_TFIDF_vectorizer(docs):
+  from sklearn.feature_extraction.text import TfidfVectorizer
+
+  stop_words = text.ENGLISH_STOP_WORDS.union(['00', '10', '100', '12', '15', '16', '20', '200', '24', '25',\
+       '2nd', '30', '40', '45', '50', '60', '75', '80', '90','!',"''","'m","'s",',','.','...','He','I','It','My','Of','``',\
+        '!',"''","'m","'re","'s",',','-','.','...','9','An','book','Ca','Do','I','It','S.','``','!',"''","'s",'(',')',',','-','.',\
+        'b', 'c', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y','&',"'ll",'-D','5',':','?',\
+        "'", '0', '1', '2', '3', '4', '6', '7', '8', 'A', 'C', 'D', 'H', 'M', 'O', 'S', '`','#',"'ve",'*','--','..','....','10/10','4/5',';',\
+        'As','At','HE','IS','IT','If','In','MY','No','ON','On','PR','SO','So','St','To','US','We','/', 'E', 'N', 'P', 'R', 'T', 'U', 'W', 'Y',\
+        '$','%',"'S","'d",'.....','1/2','1/3','105','12-lead','125','14','150','198','1\\23\\18','22','221','27','3-3.5','35','AM','Be','By',\
+        'CK','DJ','De','Dr','HM','JE','K.','L','MB','Mr','Ms','R.','TO','W.','YA','B', 'J', 'K', '\\','@','Im','Me','Is','000','100ish','11',\
+        '178','191','1945','1st','2015','2016','260','36','360','3rds','3star','55','70','78','80s','86','87','99','_____'])
+  
+  #initialize TFIDF vectorizer
+  vectorizer = TfidfVectorizer(stop_words=stop_words,ngram_range=(1,4))
+
+  #create an empty list
+  tfidf_vectorized_docs=[]
+
+  #loop over the docs
+  for doc in docs:
+    X=vectorizer.fit_transform(doc['reviewText'])
+    tfidf_vectorized_docs.append((vectorizer.get_feature_names(),X))
+  
+  return tfidf_vectorized_docs
+
+############## Function Ends ################
+
+tfidf_data=docs_TFIDF_vectorizer(docs)
+
+#The corresponding dataframes with tfidf data maybe called df_unclustered, df_0, df_1, df_2. We can easily assign names, as follows:
+X=[pd.DataFrame(tfidf_data[i][1].todense(),columns=tfidf_data[i][0]) for i in range(len(tfidf_data))]
+print('X:\n',X)
+
+print('df_list_comprehension:\n',[df for df in X])
+
+#List comprehension to create separate list for each cluster
+n_prominent_words=[df.sum().nlargest(15).index for df in X]
+print('n_prominent_words:', n_prominent_words)
+
+df_n_prominent_words=pd.DataFrame(n_prominent_words).T
+#df_n_prominent_words=pd.DataFrame(n_prominent_words)
+print('df_n_prominent_words:',df_n_prominent_words)
+
+
+#make a cluster name list equal to selected_clusters
+cluster_names_list=['cluster_'+ str(i) for i in selected_clusters]
+print('cluster_names_list before assignment:',cluster_names_list)
+df_n_prominent_words.columns=cluster_names_list
+
+
+prominent_words_by_cluster=st.checkbox('Show prominent words by cluster',key='prominent_words_by_cluster')
+if prominent_words_by_cluster:
+    st.dataframe(df_n_prominent_words)
+
+
