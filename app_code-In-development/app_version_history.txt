@@ -1,0 +1,1 @@
+Nov 24, 2020 -> review_clustering_app_v_0.3.py is the first version that takes advantage of caching. It caches the embedded text using function in embedding.py. It's unclear if dimension reduction and HDBSCAN need caching as well for stable results and improved performance.
