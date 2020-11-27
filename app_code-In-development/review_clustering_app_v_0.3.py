@@ -33,8 +33,8 @@ if show_df:
 
 gc.collect()
 
-product_list=product_reviews_ratings['asin'].value_counts().index[:5]
-show_most_reviewed=st.checkbox('Show 5 most reviewed products')
+product_list=product_reviews_ratings['asin'].value_counts().index[:15]
+show_most_reviewed=st.checkbox('Show 15 most reviewed products')
 if show_most_reviewed:
     st.dataframe(product_list)
 
@@ -82,11 +82,15 @@ bert_embed=st.checkbox('Do you want to embed using bert?',key='bert_embed')
 if bert_embed:
     embeddings=bert_sent_embed(data['reviewText'])
 
+#setting ngram range
+ngram_min=st.number_input('min number of words in returned terms:',key='ngram_min')
+ngram_max=st.number_input('max number of words in returned terms:',key='ngram_max')
+
 #reduce dimensionality to 6, keeping neighbors at 100 
-umap_embeddings = umap.UMAP(n_neighbors=100,n_components=6,metric='cosine').fit_transform(embeddings)
+umap_embeddings = umap.UMAP(n_neighbors=100,n_components=5,metric='cosine').fit_transform(embeddings)
 
 #clustering using HDBSCAN
-clusters=hdbscan.HDBSCAN(min_cluster_size=16,min_samples=10,cluster_selection_epsilon=0.5,metric='euclidean',cluster_selection_method='eom').fit(umap_embeddings)
+clusters=hdbscan.HDBSCAN(min_cluster_size=16,min_samples=10,cluster_selection_epsilon=0.6,metric='euclidean',cluster_selection_method='eom').fit(umap_embeddings)
 
 
 #Let's explore what clusters and the docs in each cluster
@@ -170,7 +174,7 @@ def docs_TFIDF_vectorizer(docs):
         '178','191','1945','1st','2015','2016','260','36','360','3rds','3star','55','70','78','80s','86','87','99','_____'])
   
   #initialize TFIDF vectorizer
-  vectorizer = TfidfVectorizer(stop_words=stop_words,ngram_range=(1,4))
+  vectorizer = TfidfVectorizer(stop_words=stop_words,ngram_range=(int(ngram_min),int(ngram_max)))
 
   #create an empty list
   tfidf_vectorized_docs=[]
